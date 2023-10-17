@@ -1,117 +1,97 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useRef, useState} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  Button,
+  Animated,
+  Dimensions,
+  StyleSheet,
+  Easing,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const {width} = Dimensions.get('window');
+const TOTAL_SECTIONS = 100;
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App: React.FC = () => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentValue, setCurrentValue] = useState(0);
 
-function Section({children, title}: SectionProps): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  animatedValue.addListener(({value}) => {
+    console.log('Animated value: ', value);
+  });
 
-function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const handlePlay = () => {
+    console.log('play');
+    setIsPlaying(true);
+    Animated.timing(animatedValue, {
+      toValue: -TOTAL_SECTIONS * width,
+      duration:
+        (TOTAL_SECTIONS + currentValue / (TOTAL_SECTIONS * width)) * 1000,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }).start(() => setIsPlaying(false));
   };
 
+  const handlePause = () => {
+    console.log('pause');
+    setIsPlaying(false);
+    animatedValue.stopAnimation(value => {
+      console.log('Stop', value);
+      setCurrentValue(value);
+    });
+  };
+
+  const sections = Array.from({length: TOTAL_SECTIONS}).map((_, index) => (
+    <View key={index} style={[styles.section, {width}]}>
+      <Text style={styles.sectionText}>{index}</Text>
+    </View>
+  ));
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <View style={styles.buttonsContainer}>
+        <Button title="Play" onPress={handlePlay} disabled={isPlaying} />
+        <Button title="Pause" onPress={handlePause} disabled={!isPlaying} />
+      </View>
+      <Animated.View style={{transform: [{translateX: animatedValue}]}}>
+        <LinearGradient
+          colors={['white', 'red']}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 0}}
+          style={styles.gradient}>
+          {sections}
+        </LinearGradient>
+      </Animated.View>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  gradient: {
+    flexDirection: 'row',
+    width: width * TOTAL_SECTIONS,
+    height: 300,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 100,
+    zIndex: 100,
   },
-  highlight: {
-    fontWeight: '700',
+  section: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionText: {
+    fontSize: 100,
+    fontWeight: 'bold',
   },
 });
 
